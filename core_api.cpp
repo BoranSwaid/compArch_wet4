@@ -84,6 +84,7 @@ public:
 	bool isIdle();
 	Thread& getNextReadyThread();
 	void updateThreads();
+	Thread* getThread(int id);
 
 	void CORE_FinegrainedMT();
 	double CORE_FinegrainedMT_CPI();
@@ -241,6 +242,15 @@ void FineGrainedMT::updateThreads()
 	}
 }
 
+Thread* FineGrainedMT::getThread(int id)
+{
+	for (int i = 0; i < threadnumber; i++) {
+		if (threads_vector[i].tid == id)
+			return &threads_vector[i];
+	}
+	return nullptr;
+}
+
 //run simulator of fine-grained MT until all threads get halted
 void FineGrainedMT::CORE_FinegrainedMT()
 {
@@ -252,6 +262,7 @@ void FineGrainedMT::CORE_FinegrainedMT()
 			runningTH = getNextReadyThread();
 			int pc = runningTH.pc;
 			runningTH.runInstruction(runningTH.insts[pc]); //run command
+			inst_num++;
 			updateThreads();
 
 			int op = runningTH.insts[pc].opcode;
@@ -267,5 +278,18 @@ void FineGrainedMT::CORE_FinegrainedMT()
 		else {
 			updateThreads();
 		}
+	}
+}
+
+double FineGrainedMT::CORE_FinegrainedMT_CPI()
+{
+	return ((double)cycles_count) / inst_num;
+}
+
+void FineGrainedMT::CORE_FinegrainedMT_CTX(tcontext* context, int threadid)
+{
+	Thread* thread = getThread(threadid);
+	for (int i = 0; i < REGS_COUNT; i++) {
+		context->reg[i] = thread->reg_file.reg[i];
 	}
 }
